@@ -17,7 +17,7 @@
 # run the executable
 # A script to map PacBio data with SV detection optimised. Designed for the Phoenix supercomputer
 # Set common paths
-exeDir=/data/neurogenetics/executables/ngmlr/ngmlr-0.2.6/
+exeDir=/data/neurogenetics/executables/ngmlr/ngmlr-0.2.7/
 
 usage()
 {
@@ -29,7 +29,7 @@ echo "# A script to map Oxford Nanopore data with SV detection optimised. Design
 #
 # Options
 # -p	REQUIRED. Prefix for file name. Can be any string of text without spaces or reserved special characters.
-# -s	OPTIONAL. /path/to/sequence/files . Default $FASTDIR/fastq
+# -s	OPTIONAL. /path/to/sequence/files . Default $FASTDIR/fastq/ONT/\$outPrefix/fastq_pass
 # -g	OPTIONAL. Genome to map to. Default /data/neurogenetics/RefSeq/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $FASTDIR/ONT/\$outPrefix is used)
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you might be reading this too!
@@ -37,7 +37,7 @@ echo "# A script to map Oxford Nanopore data with SV detection optimised. Design
 # 
 # Original:  Mark Corbett, 04/01/2018, mark dot corbett at adelaide.edu.au
 # Modified: (Date; Name; Description)
-# 
+# 26/03/2020; Mark; Update to v0.2.7, Update to use info in the final_report.txt file
 "
 }
 ## Set Variables ##
@@ -72,8 +72,8 @@ if [ -z "$outPrefix" ]; then # If no output prefix is specified
 	exit 1
 fi
 if [ -z "$seqDir" ]; then # If path to sequences not specified then do not proceed
-	seqDir=$FASTDIR/fastq
-	echo "#INFO: Using $seqDir to locate files"
+	seqDir=$FASTDIR/fastq/ONT/$outPrefix/fastq_pass
+	echo "#INFO: Using $seqDir to locate files, if your files aren't here the script might run but you won't get any alignments"
 fi
 if [ -z "$workDir" ]; then # If no output directory then use default directory
 	workDir=$FASTDIR/ONT/$outPrefix
@@ -99,8 +99,6 @@ module load SAMtools/1.3.1-foss-2016b
 module load sambamba/0.6.6-foss-2016b
 
 cat $seqDir/*.fastq.gz > $tmpDir/$outPrefix.reads.fastq.gz
-#ln -s $seqDir/*.fastq.gz $tmpDir/$outPrefix.reads.fastq.gz
-cd $tmpDir
 
 $exeDir/ngmlr --bam-fix --no-progress -t 16 -x ont -r $genome -q $tmpDir/$outPrefix.reads.fastq.gz |\
 samtools view -@ 16 -bT $genome - |\
