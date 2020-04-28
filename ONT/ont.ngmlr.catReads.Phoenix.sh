@@ -86,10 +86,10 @@ if [ -z "$genome" ]; then # If genome not specified then use hg38
 fi
 
 tmpDir=$FASTDIR/tmp/$outPrefix # Use a tmp directory for all of the GATK and samtools temp files
-if [ ! -d $tmpDir ]; then
+if [ ! -d "$tmpDir" ]; then
 	mkdir -p $tmpDir
 fi
-if [ ! -d $workDir ]; then
+if [ ! -d "$workDir" ]; then
 	mkdir -p $workDir
 fi
 
