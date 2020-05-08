@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -J ngmlr
-#SBATCH -o /fast/users/%u/launch/ngmlr.slurm-%j.out
+#SBATCH -o /fast/users/%u/log/ngmlr.ont.slurm-%j.out
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
@@ -85,7 +85,7 @@ if [ -z "$genome" ]; then # If genome not specified then use hg38
 	echo "#INFO: Using $genome as the default genome build"
 fi
 
-tmpDir=$FASTDIR/tmp/$outPrefix # Use a tmp directory for all of the GATK and samtools temp files
+tmpDir=$FASTDIR/tmp/$SLURM_JOB_ID # Use a tmp directory for all of the GATK and samtools temp files
 if [ ! -d "$tmpDir" ]; then
 	mkdir -p $tmpDir
 fi
