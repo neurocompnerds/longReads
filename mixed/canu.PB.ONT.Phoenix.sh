@@ -68,27 +68,27 @@ if [ -z "$workDir" ]; then # If no output directory then use default location
 	echo "#INFO: Using $workDir as the output directory"
 fi
 
-if [ ! -d $workDir ]; then
+if [ ! -d "$workDir" ]; then
 	mkdir -p $workDir
 fi
 
-if [ -d $seqDir/PacBio ]; then
-	pbReads="-pacbio-raw $seqDir/PacBio/*.fastq.gz"
+if [ -d "$seqDir/PacBio" ]; then
+	pbReads="-pacbio $seqDir/PacBio/*.fastq.gz"
 fi
-if [ -d $seqDir/ONT ]; then
-	ontReads="-nanopore-raw $seqDir/ONT/*.fastq.gz"
+if [ -d "$seqDir/ONT" ]; then
+	ontReads="-nanopore $seqDir/ONT/*.fastq.gz"
 fi
 #
 #                     O_
 #               \-----\/---/
 # Launch Canu  ~~\~~~~/~~~/~~
-module load canu/1.7-foss-2016b
+module load canu/2.0-foss-2016b
 
 # Start paddling
 canu -p $outPrefix -d $workDir genomeSize=3.6g \
 gridOptionsJobName="canu" \
 gridOptions=" -A robinson -p batch --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
 merylMemory=125 \
-gridOptionsBAT=" -o $FASTDIR/launch/canu.slurm-%j.out -A robinson -p highmem --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
+gridOptionsBAT=" -o $FASTDIR/log/canu.slurm-%j.out -A robinson -p highmem --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
 $pbReads $ontReads
 
