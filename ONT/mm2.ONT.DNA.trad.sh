@@ -176,7 +176,7 @@ module load $modSAMtools
 module load $modHTSlib
 ${minimapProg} -ax map-ont \
 -R "@RG\\tID:${ID}\\tLB:${LB}\\tPL:ONT\\tSM:${sampleName[$SLURM_ARRAY_TASK_ID]}" \
--t ${cores} ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]} |\
+-t ${cores} ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz |\
 samtools view -bT ${genomeBuild} - |\
 samtools sort -l 5 -m 4G -@${cores} -T${sampleName[$SLURM_ARRAY_TASK_ID]} -o ${workDir}/${sampleName[$SLURM_ARRAY_TASK_ID]}.sort.bam -
 samtools index ${workDir}/${sampleName[$SLURM_ARRAY_TASK_ID]}.sort.bam
