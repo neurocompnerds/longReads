@@ -40,7 +40,7 @@ echo "# Script for mapping Oxford Nanopore cDNA reads to the human genome.
 # -s	REQUIRED. Path to the folder containing the fastq_pass folder.  Your final_summary_xxx.txt must be in this folder.
 # -S	OPTIONAL (with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
 #       from the final_summary_xxx.txt file.
-# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $FASTDIR/ONT/cDNA/\$sampleName is used)
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $FASTDIR/ONT/DNA/\$sampleName is used)
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
 #                 Default \"SQK-DCS109_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
@@ -103,8 +103,8 @@ if [ -z "$sampleName" ]; then # If sample name not specified then look for the f
 	fi
 fi
 if [ -z "$outputDir" ]; then # If no output directory then use default directory
-	outputDir=$FASTDIR/ONT/cDNA/$sampleName
-	echo "## INFO: Using $FASTDIR/ONT/cDNA/$sampleName as the output directory"
+	outputDir=$FASTDIR/ONT/DNA/$sampleName
+	echo "## INFO: Using $outputDir as the output directory"
 fi
 if [ ! -d "$outputDir" ]; then
 	mkdir -p $outputDir
