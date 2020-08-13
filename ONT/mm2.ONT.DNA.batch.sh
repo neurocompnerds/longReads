@@ -20,7 +20,7 @@ modHTSlib="HTSlib/1.9-foss-2016b"
 
 # Hard coded paths and variables
 minimapProg="/data/neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
-genomeBuild="/data/neurogenetics/RefSeq/GATK/hg38/Homo_sapiens_assembly38.fasta"
+genomeBuild="/data/neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
 cores=8 # Set the same as above for -n
 
 usage()
