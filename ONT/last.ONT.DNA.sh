@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH -J mm2ont-cDNA
-#SBATCH -o /hpcfs/users/%u/log/mm2ont-DNA-slurm-%j.out
+#SBATCH -J LAST-gDNA
+#SBATCH -o /hpcfs/users/%u/log/LAST-gDNA-slurm-%j.out
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
@@ -15,42 +15,40 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # Modules needed
-module load arch/haswell
 modSAMtools="SAMtools/1.9-foss-2016b"
 modHTSlib="HTSlib/1.9-foss-2016b"
 
 # Hard coded paths and variables
-minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
-genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
 userDir="/hpcfs/users/${USER}"
+lastProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/last/bin/"
+tandemGenotypesProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/tandem-genotypes"
+genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
 cores=8 # Set the same as above for -n
 
 usage()
 {
 echo "# Script for mapping Oxford Nanopore reads to the human genome.
-# This script bypasses the mm2.ONT.DNA.wdl workflow and just submits the job directly.  The script sets up all of the required inputs using the information 
-# submitted via the flags below or default options provided.
+#
 # REQUIREMENTS: As a minimum you need the fastq_pass folder and the final_summary_xxx.txt file from your nanopore run.
 #
-# Usage sbatch $0 -s /path/to/sequences -o /path/to/output -c /path/to/config.cfg -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
+# Usage sbatch $0 -s /path/to/sequences -o /path/to/output -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
 # Usage (with barcodes) sbatch --array 0-(n-1 barcodes) $0 -s /path/to/sequences -b -o /path/to/output -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
 #
 # Options
 # -s	REQUIRED. Path to the folder containing the fastq_pass folder.  Your final_summary_xxx.txt must be in this folder.
 # -b    DEPENDS.  If you used barcodes set the -b flag.  If you want meaningful sample ID add a file called barcodes.txt to the sequence folder with the 
 #                 tab delimited barcode and ID on each line.
-# -S	OPTIONAL (with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
-#                from the final_summary_xxx.txt file.
+# -S	OPTIONAL.(with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
+#                 from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
 #                 Default \"SQK-LSK109_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
 # -h or --help	  Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
-# Original: Written by Mark Corbett, 28/04/2020
+# Original: Written by Mark Corbett, 01/09/2020
 # Modified: (Date; Name; Description)
-# 10/08/2020; Mark Corbett; Update to barcodes as per cDNA script (see speleonut::RNAseq repo)
-# 15/09/2020; Mark Corbett; Update Phoenix paths
+#
 #
 "
 }
@@ -91,7 +89,7 @@ if [ -z "$seqPath" ]; then # If path to sequences not specified then do not proc
 fi
 if [ ! -d "$seqPath/fastq_pass" ]; then # If the fastq_pass directory does not exist then do not proceed
     usage
-    echo "## ERROR: The fastq_pass directory needs to be in $seqPath. Don't include fastq_path in this name."
+    echo "## ERROR: The fastq_pass directory needs to be in $seqPath. Don't include fastq_pass in this name."
 	exit 1
 fi
 
@@ -106,7 +104,7 @@ if "$barcodes"; then
 	else
 	    BC=($(ls $seqPath/fastq_pass/bar*))
 		sampleName=($(ls $seqPath/fastq_pass/bar*))
-		echo "## INFO: Using generic barcodes as sample names (suggest to supply a barcodes.txt file in future)."
+		echo "## INFO: Using generic barcodes as sample names (if you supply a barcodes.txt file you can specify sample names)."
 	fi
 fi
         
@@ -171,15 +169,15 @@ if [ -z "$ID" ]; then # If no ID then fetch from the .fastq file
 fi
 echo "## INFO: Using $ID for the sequence ID"
 
-# Build the input .json file
-cd $workDir
-
-## Run the script ##
+## Load modules ##
+module load arch/haswell
 module load $modSAMtools
 module load $modHTSlib
-${minimapProg} -ax map-ont \
--R "@RG\\tID:${ID}\\tLB:${LB}\\tPL:ONT\\tSM:${sampleName[$SLURM_ARRAY_TASK_ID]}" \
--t ${cores} ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz |\
-samtools view -bT ${genomeBuild} - |\
-samtools sort -l 5 -m 4G -@${cores} -T${sampleName[$SLURM_ARRAY_TASK_ID]} -o ${workDir}/${sampleName[$SLURM_ARRAY_TASK_ID]}.sort.bam -
-samtools index ${workDir}/${sampleName[$SLURM_ARRAY_TASK_ID]}.sort.bam
+module load R
+module load Python/3.7.0
+
+## Run the script ##
+cd $workDir
+${lastProgDir}/last-train -P${cores} -Q0 ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz > $workDir/${sampleName[$SLURM_ARRAY_TASK_ID]}.par
+${lastProgDir}/lastal -P${cores} -p $workDir/${sampleName[$SLURM_ARRAY_TASK_ID]}.par ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz | \
+${lastProgDir}/last-split -fMAF | gzip > $workDir/${sampleName[$SLURM_ARRAY_TASK_ID]}.maf.gz

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -J ngmlr
-#SBATCH -o /fast/users/%u/log/ngmlr.ont.slurm-%j.out
+#SBATCH -o /hpcfs/users/%u/log/ngmlr.ont.slurm-%j.out
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
@@ -17,7 +17,8 @@
 # run the executable
 # A script to map PacBio data with SV detection optimised. Designed for the Phoenix supercomputer
 # Set common paths
-exeDir=/data/neurogenetics/executables/ngmlr/ngmlr-0.2.7/
+exeDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/ngmlr/ngmlr-0.2.7/"
+userDir="/hpcfs/users/${USER}"
 
 usage()
 {
@@ -29,15 +30,16 @@ echo "# A script to map Oxford Nanopore data with SV detection optimised. Design
 #
 # Options
 # -p	REQUIRED. Prefix for file name. Can be any string of text without spaces or reserved special characters.
-# -s	OPTIONAL. /path/to/sequence/files . Default $FASTDIR/fastq/ONT/\$outPrefix/fastq_pass
-# -g	OPTIONAL. Genome to map to. Default /data/neurogenetics/RefSeq/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
-# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $FASTDIR/ONT/\$outPrefix is used)
+# -s	OPTIONAL. /path/to/sequence/files . Default $userDir/sequences/ONT/\$outPrefix/fastq_pass
+# -g	OPTIONAL. Genome to map to. Default /hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/\$outPrefix is used)
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you might be reading this too!
 #
 # 
 # Original:  Mark Corbett, 04/01/2018, mark dot corbett at adelaide.edu.au
 # Modified: (Date; Name; Description)
 # 26/03/2020; Mark; Update to v0.2.7, Update to use info in the final_report.txt file
+# 15/09/2020; Mark Corbett; Update Phoenix paths
 "
 }
 ## Set Variables ##
@@ -67,25 +69,25 @@ done
 
 if [ -z "$outPrefix" ]; then # If no output prefix is specified
 	usage
-	echo "#ERROR: You need to specify a prefix for your files this can be any text without spaces or reserved special characters.
+	echo "## ERROR: You need to specify a prefix for your files this can be any text without spaces or reserved special characters.
 	# eg. -p myFileName"
 	exit 1
 fi
 if [ -z "$seqDir" ]; then # If path to sequences not specified then do not proceed
-	seqDir=$FASTDIR/fastq/ONT/$outPrefix/fastq_pass
-	echo "#INFO: Using $seqDir to locate files, if your files aren't here the script might run but you won't get any alignments"
+	seqDir=$userDir/sequences/ONT/$outPrefix/fastq_pass
+	echo "## WARN: Using $seqDir to locate files, if your files aren't here the script might run but you won't get any alignments"
 fi
 if [ -z "$workDir" ]; then # If no output directory then use default directory
-	workDir=$FASTDIR/ONT/$outPrefix
-	echo "#INFO: Using $workDir as the output directory"
+	workDir=$userDir/ONT/$outPrefix
+	echo "## INFO: Using $workDir as the output directory"
 fi
 if [ -z "$genome" ]; then # If genome not specified then use hg38
-	genome=/data/neurogenetics/RefSeq/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
-	shortGenome=GRCh38.dna.primary_assembly.fa
-	echo "#INFO: Using $genome as the default genome build"
+	genome="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+	shortGenome="GRCh38_no_alt_analysis_set"
+	echo "## INFO: Using $genome as the default genome build"
 fi
 
-tmpDir=$FASTDIR/tmp/$SLURM_JOB_ID # Use a tmp directory for all of the GATK and samtools temp files
+tmpDir=$userDir/tmp/$SLURM_JOB_ID # Use a tmp directory for the sambamba temp files
 if [ ! -d "$tmpDir" ]; then
 	mkdir -p $tmpDir
 fi
@@ -94,6 +96,7 @@ if [ ! -d "$workDir" ]; then
 fi
 
 # load modules
+module load arch/haswell
 module load HTSlib/1.3.1-foss-2016b
 module load SAMtools/1.3.1-foss-2016b
 module load sambamba/0.6.6-foss-2016b
