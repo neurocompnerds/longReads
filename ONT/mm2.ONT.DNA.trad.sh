@@ -167,7 +167,7 @@ else
 fi
 
 if [ -z "$ID" ]; then # If no ID then fetch from the .fastq file
-	ID=$(zcat $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]} | head -n 1 | tr " " "\n" | grep runid | cut -f2 -d"=")
+	ID=$(zcat $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz | head -n 1 | tr " " "\n" | grep runid | cut -f2 -d"=")
 fi
 echo "## INFO: Using $ID for the sequence ID"
 
