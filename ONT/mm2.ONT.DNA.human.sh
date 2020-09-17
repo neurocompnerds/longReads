@@ -1,7 +1,6 @@
 #!/bin/bash
-
 #SBATCH -J mm2ont-cDNA-wdl-sub
-#SBATCH -o /fast/users/%u/log/mm2ont-cDNA-wdl-sub-slurm-%j.out
+#SBATCH -o /hpcfs/users/%u/log/mm2ont-cDNA-wdl-sub-slurm-%j.out
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
@@ -15,16 +14,18 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # Modules needed
+module load arch/haswell
 modJava="Java/9.0.4"
 modSAMtools="SAMtools/1.9-foss-2016b"
 modHTSlib="HTSlib/1.9-foss-2016b"
 
 # Hard coded paths and variables
-cromwellPath="/data/neurogenetics/executables/cromwell"
-cromwellJar="cromwell-48.jar"
-minimapProg="/data/neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
-genomeBuild="/data/neurogenetics/RefSeq/GATK/hg38/Homo_sapiens_assembly38.fasta"
-scriptDir="/data/neurogenetics/git/PhoenixScripts/mark/longReads/ONT"
+cromwellPath="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/cromwell"
+cromwellJar="cromwell-53.1.jar"
+minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
+genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/mark/longReads/ONT"
+userDir="/hpcfs/users/${USER}"
 cores=8
 
 usage()
@@ -40,7 +41,7 @@ echo "# Script for mapping Oxford Nanopore cDNA reads to the human genome.
 # -s	REQUIRED. Path to the folder containing the fastq_pass folder.  Your final_summary_xxx.txt must be in this folder.
 # -S	OPTIONAL (with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
 #       from the final_summary_xxx.txt file.
-# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $FASTDIR/ONT/DNA/\$sampleName is used)
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
 #                 Default \"SQK-DCS109_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
@@ -48,6 +49,7 @@ echo "# Script for mapping Oxford Nanopore cDNA reads to the human genome.
 # 
 # Original: Written by Mark Corbett, 21/02/2020
 # Modified: (Date; Name; Description)
+# 15/09/2020; Mark Corbett; Update Phoenix paths
 #
 "
 }
@@ -103,7 +105,7 @@ if [ -z "$sampleName" ]; then # If sample name not specified then look for the f
 	fi
 fi
 if [ -z "$outputDir" ]; then # If no output directory then use default directory
-	outputDir=$FASTDIR/ONT/DNA/$sampleName
+	outputDir=$userDir/ONT/DNA/$sampleName
 	echo "## INFO: Using $outputDir as the output directory"
 fi
 if [ ! -d "$outputDir" ]; then
