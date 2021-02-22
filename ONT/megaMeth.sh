@@ -13,7 +13,7 @@
 # Notification configuration
 #SBATCH --mail-type=END
 #SBATCH --mail-type=FAIL
-#SBATCH --mail-user=a1038749@adelaide.edu.au
+#SBATCH --mail-user=${USER}@adelaide.edu.au
 
 # Hard coded paths and variables
 # Module list
