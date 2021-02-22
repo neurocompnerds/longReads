@@ -144,7 +144,6 @@ megalodon $seqPath/fast5_pass \
 --outputs basecalls mappings mod_mappings mods per_read_mods \
 --mod-motif hm CG 0 $convertToBS \
 --reference $genomeBuild \
---samtools-executable $SAMtools \
 --mod-map-emulate-bisulfite \
 --output-directory $workDir \
 --overwrite
