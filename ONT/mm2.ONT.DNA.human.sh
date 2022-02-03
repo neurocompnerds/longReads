@@ -34,6 +34,8 @@ case "${buildID}" in
                 ;;
     hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/hs37d5.fa.gz"
                 ;;
+    GRCm38 | mm10 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
+                ;;
     * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
                 echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
                 ;;
@@ -57,7 +59,7 @@ echo "# Script for mapping Oxford Nanopore cDNA reads to the human genome.
 # -S	OPTIONAL (with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
 #                from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
-# -g    OPTIONAL. Genome build to use, select from either GRCh38 or hs37d5. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
+# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
 #                 Default \"SQK-LSK110_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.

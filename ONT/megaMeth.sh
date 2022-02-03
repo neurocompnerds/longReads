@@ -33,6 +33,8 @@ case "${buildID}" in
                 ;;
     hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/hs37d5.fa.gz"
                 ;;
+    GRCm38 | mm10 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
+                ;;
     * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.mmi"
                 echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
                 ;;
@@ -51,7 +53,7 @@ echo "# Script for calling methylation from Oxford Nanopore reads.
 # -s    REQUIRED.    Path to the folder containing the fast5 folder or folders (don't include fast5_pass)
 # -S    CONDITIONAL. Either a sample name must be supplied or the final_summary.txt file is needed in /path/to/fast5_folders
 # -o    OPTIONAL.    Path to output.  Default is /path/to/fast5_folders/megalodon_output
-# -g    OPTIONAL.    Genome build to use, select from either GRCh38 or hs37d5. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
+# -g    OPTIONAL.    Genome build to use, select from either GRCh38, hs37d5 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -B    OPTIONAL.    Flag to make an in silico bisulfite conversion of the 5mC data
 # -h or --help       Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 #
