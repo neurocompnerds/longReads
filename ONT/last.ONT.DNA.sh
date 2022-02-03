@@ -21,8 +21,22 @@ modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b" "R" "P
 userDir="/hpcfs/users/${USER}"
 lastProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/last/bin/"
 tandemGenotypesProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/tandem-genotypes"
-genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
 cores=8 # Set the same as above for -n
+
+# Genome list (alter case statement below to add new options)
+set_genome_build() {
+case "${buildID}" in
+    GRCh38 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+                ;;
+    hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/hs37d5.fa.gz"
+                ;;
+    GRCm38 | mm10 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
+                ;;
+    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.mmi"
+                echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
+                ;;
+esac
+}
 
 usage()
 {
@@ -37,6 +51,7 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 # -s	REQUIRED. Path to the folder containing the fastq_pass folder.  Your final_summary_xxx.txt must be in this folder.
 # -b    DEPENDS.  If you used barcodes set the -b flag.  If you want meaningful sample ID add a file called barcodes.txt to the sequence folder with the 
 #                 tab delimited barcode and ID on each line.
+# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -S	OPTIONAL.(with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
 #                 from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
@@ -47,7 +62,7 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 # 
 # Original: Written by Mark Corbett, 01/09/2020
 # Modified: (Date; Name; Description)
-# 03/02/2022; Mark; Update module loading
+# 03/02/2022; Mark; Update module loading. Add genome build selection.
 #
 "
 }
@@ -64,6 +79,9 @@ while [ "$1" != "" ]; do
 		-S )			shift
 					sampleName=$1
 					;;
+        -g )            shift
+                        buildID=$1
+                        ;;
 		-o )			shift
 					workDir=$1
 					;;
@@ -117,6 +135,10 @@ if [ -z "${sampleName[$SLURM_ARRAY_TASK_ID]}" ]; then # If sample name not speci
 		exit 1
 	fi
 fi
+
+# Set the genome build using the function defined above.
+set_genome_build
+echo "## INFO: Using the following genome build: $genomeBuild"
 
 if [ -z "$workDir" ]; then # If no output directory then use default directory
 	workDir=$userDir/ONT/DNA/${sampleName[$SLURM_ARRAY_TASK_ID]}
