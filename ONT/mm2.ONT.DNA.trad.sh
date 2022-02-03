@@ -15,7 +15,7 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # Modules needed
-modList=("arch/haswell", "SAMtools/1.9-foss-2016b", "HTSlib/1.9-foss-2016b")
+modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b")
 
 # Hard coded paths and variables
 minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
