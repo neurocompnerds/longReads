@@ -15,8 +15,7 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # Modules needed
-modSAMtools="SAMtools/1.9-foss-2016b"
-modHTSlib="HTSlib/1.9-foss-2016b"
+modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b" "R" "Python/3.7.0")
 
 # Hard coded paths and variables
 userDir="/hpcfs/users/${USER}"
@@ -42,13 +41,13 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 #                 from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
-#                 Default \"SQK-LSK109_\$protocol_group_id\"
+#                 Default \"SQK-LSK110_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
 # -h or --help	  Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
 # Original: Written by Mark Corbett, 01/09/2020
 # Modified: (Date; Name; Description)
-#
+# 03/02/2022; Mark; Update module loading
 #
 "
 }
@@ -131,9 +130,9 @@ fi
 if [ -z "$LB" ]; then # If library not specified try to make a specfic one or use "SQK-DCS109" as default
     if [ -f "$finalSummaryFile" ]; then
 		protocol_group_id=$(grep protocol_group_id $finalSummaryFile | cut -f2 -d"=") 
-		LB="SQK-LSK109-$protocol_group_id"
+		LB="SQK-LSK110-$protocol_group_id"
 	else 
-	    LB="SQK-LSK109"
+	    LB="SQK-LSK110"
 	fi
 fi
 echo "## INFO: Using $LB for library name"
@@ -170,11 +169,9 @@ fi
 echo "## INFO: Using $ID for the sequence ID"
 
 ## Load modules ##
-module load arch/haswell
-module load $modSAMtools
-module load $modHTSlib
-module load R
-module load Python/3.7.0
+for mod in "${modList[@]}"; do
+    module load $mod
+done
 
 ## Run the script ##
 cd $workDir
