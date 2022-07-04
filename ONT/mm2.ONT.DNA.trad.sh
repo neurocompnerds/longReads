@@ -31,7 +31,7 @@ case "${buildID}" in
                 ;;
     GRCm38 | mm10 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
                 ;;
-    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.mmi"
+    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
                 echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
                 ;;
 esac
