@@ -6,8 +6,8 @@
 #SBATCH -p batch
 #SBATCH -N 1
 #SBATCH -n 8
-#SBATCH --time=05:00:00
-#SBATCH --mem=32GB
+#SBATCH --time=10:00:00
+#SBATCH --mem=48GB
 
 # Notification configuration 
 #SBATCH --mail-type=END                                         
@@ -15,15 +15,31 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # Modules needed
-modSAMtools="SAMtools/1.9-foss-2016b"
-modHTSlib="HTSlib/1.9-foss-2016b"
+modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b" "R" "Python/3.7.0")
 
 # Hard coded paths and variables
 userDir="/hpcfs/users/${USER}"
 lastProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/last/bin/"
 tandemGenotypesProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/tandem-genotypes"
-genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
 cores=8 # Set the same as above for -n
+
+# Genome list (alter case statement below to add new options)
+set_genome_build() {
+case "${buildID}" in
+    GRCh38 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+                ;;
+    hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/hs37d5/hs37d5.fa.gz"
+                ;;
+    GRCm38 | mm10 ) buildID="GRCm38"   
+                    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
+                ;;
+    T2T_CHM13v2 )   genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/T2T_CHM13v2.0.ucsc.ebv.fa.gz"
+                ;;
+    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+                echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
+                ;;
+esac
+}
 
 usage()
 {
@@ -38,17 +54,19 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 # -s	REQUIRED. Path to the folder containing the fastq_pass folder.  Your final_summary_xxx.txt must be in this folder.
 # -b    DEPENDS.  If you used barcodes set the -b flag.  If you want meaningful sample ID add a file called barcodes.txt to the sequence folder with the 
 #                 tab delimited barcode and ID on each line.
+# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5, T2T_CHM13v2 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -S	OPTIONAL.(with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
 #                 from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
-#                 Default \"SQK-LSK109_\$protocol_group_id\"
+#                 Default \"SQK-LSK110_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
 # -h or --help	  Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
 # Original: Written by Mark Corbett, 01/09/2020
 # Modified: (Date; Name; Description)
-#
+# 03/02/2022; Mark; Update module loading. Add genome build selection.
+# 11/10/2022; Mark Corbett; Add buildID to .bam file name. Add T2T_CHM13v2 to genome list
 #
 "
 }
@@ -65,6 +83,9 @@ while [ "$1" != "" ]; do
 		-S )			shift
 					sampleName=$1
 					;;
+        -g )            shift
+                        buildID=$1
+                        ;;
 		-o )			shift
 					workDir=$1
 					;;
@@ -119,6 +140,10 @@ if [ -z "${sampleName[$SLURM_ARRAY_TASK_ID]}" ]; then # If sample name not speci
 	fi
 fi
 
+# Set the genome build using the function defined above.
+set_genome_build
+echo "## INFO: Using the following genome build: $genomeBuild"
+
 if [ -z "$workDir" ]; then # If no output directory then use default directory
 	workDir=$userDir/ONT/DNA/${sampleName[$SLURM_ARRAY_TASK_ID]}
 	echo "## INFO: Using $workDir as the output directory"
@@ -131,9 +156,9 @@ fi
 if [ -z "$LB" ]; then # If library not specified try to make a specfic one or use "SQK-DCS109" as default
     if [ -f "$finalSummaryFile" ]; then
 		protocol_group_id=$(grep protocol_group_id $finalSummaryFile | cut -f2 -d"=") 
-		LB="SQK-LSK109-$protocol_group_id"
+		LB="SQK-LSK110-$protocol_group_id"
 	else 
-	    LB="SQK-LSK109"
+	    LB="SQK-LSK110"
 	fi
 fi
 echo "## INFO: Using $LB for library name"
@@ -170,11 +195,9 @@ fi
 echo "## INFO: Using $ID for the sequence ID"
 
 ## Load modules ##
-module load arch/haswell
-module load $modSAMtools
-module load $modHTSlib
-module load R
-module load Python/3.7.0
+for mod in "${modList[@]}"; do
+    module load $mod
+done
 
 ## Run the script ##
 cd $workDir
