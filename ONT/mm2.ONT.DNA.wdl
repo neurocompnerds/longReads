@@ -6,6 +6,7 @@ task mimimap2 {
     String samtools
     String program
     String genomeBuild
+    String buildID
     String seqFile
     String readGroupID
     String sampleName
@@ -21,12 +22,12 @@ task mimimap2 {
         -t ${cores} \
         ${genomeBuild} ${seqFile} |\
         samtools view -bT ${genomeBuild} - |\
-        samtools sort -l 5 -m 4G -@${cores} -T${sampleName} -o ${outputDir}/${sampleName}.sort.bam -
-        samtools index ${outputDir}/${sampleName}.sort.bam
+        samtools sort -l 5 -m 4G -@${cores} -T${sampleName} -o ${outputDir}/${sampleName}.sort.${buildID}.bam -
+        samtools index ${outputDir}/${sampleName}.sort.${buildID}.bam
     }
     output {
-        File sortedBAM = "${outputDir}/${sampleName}.sort.bam"
-        File sortedBAI = "${outputDir}/${sampleName}.sort.bam.bai"
+        File sortedBAM = "${outputDir}/${sampleName}.sort.${buildID}.bam"
+        File sortedBAI = "${outputDir}/${sampleName}.sort.${buildID}.bam.bai"
     }
     runtime {
         job_title: "mm2ont-DNA"

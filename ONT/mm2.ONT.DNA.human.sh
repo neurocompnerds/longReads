@@ -34,7 +34,10 @@ case "${buildID}" in
                 ;;
     hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/hs37d5.fa.gz"
                 ;;
-    GRCm38 | mm10 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
+    GRCm38 | mm10 ) buildID="GRCm38"   
+                    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
+                ;;
+    T2T_CHM13v2 )   genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/T2T_CHM13v2.0.ucsc.ebv.fa.gz"
                 ;;
     * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
                 echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
@@ -59,7 +62,7 @@ echo "# Script for mapping Oxford Nanopore cDNA reads to the human genome.
 # -S	OPTIONAL (with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
 #                from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
-# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
+# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5, T2T_CHM13v2 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
 #                 Default \"SQK-LSK110_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
@@ -70,6 +73,7 @@ echo "# Script for mapping Oxford Nanopore cDNA reads to the human genome.
 # 10/08/2020; Mark Corbett; Update to barcodes as per cDNA script (see speleonut::RNAseq repo)
 # 15/09/2020; Mark Corbett; Update Phoenix paths
 # 22/12/2021; Mark Corbett; Add in an option to select a genome build
+# 11/10/2022; Mark Corbett; Add buildID to .bam file name. Add T2T_CHM13v2 to genome list
 #
 "
 }
@@ -213,6 +217,7 @@ echo "{
   \"minimap2_ONT_cDNA.mimimap2.LB\": \"$LB\",
   \"minimap2_ONT_cDNA.mimimap2.sampleName\": \"$sampleName[$SLURM_ARRAY_TASK_ID]\",
   \"minimap2_ONT_cDNA.mimimap2.genomeBuild\": \"$genomeBuild\",
+  \"minimap2_ONT_cDNA.mimimap2.buildID\": \"$buildID\",
   \"minimap2_ONT_cDNA.mimimap2.outputDir\": \"$outputDir\",
   \"minimap2_ONT_cDNA.mimimap2.readGroupID\": \"$readGroupID\"
 }

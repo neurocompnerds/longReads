@@ -30,7 +30,10 @@ case "${buildID}" in
                 ;;
     hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/hs37d5/hs37d5.fa.gz"
                 ;;
-    GRCm38 | mm10 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCm38_68/GRCm38_68.fa"
+    GRCm38 | mm10 ) buildID="GRCm38"   
+                    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
+                ;;
+    T2T_CHM13v2 )   genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/T2T_CHM13v2.0.ucsc.ebv.fa.gz"
                 ;;
     * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
                 echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
@@ -51,7 +54,7 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 # -s	REQUIRED. Path to the folder containing the fastq_pass folder.  Your final_summary_xxx.txt must be in this folder.
 # -b    DEPENDS.  If you used barcodes set the -b flag.  If you want meaningful sample ID add a file called barcodes.txt to the sequence folder with the 
 #                 tab delimited barcode and ID on each line.
-# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
+# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5, T2T_CHM13v2 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -S	OPTIONAL.(with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
 #                 from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
@@ -63,6 +66,7 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 # Original: Written by Mark Corbett, 01/09/2020
 # Modified: (Date; Name; Description)
 # 03/02/2022; Mark; Update module loading. Add genome build selection.
+# 11/10/2022; Mark Corbett; Add buildID to .bam file name. Add T2T_CHM13v2 to genome list
 #
 "
 }
