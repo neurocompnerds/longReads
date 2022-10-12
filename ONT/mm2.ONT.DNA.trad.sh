@@ -7,7 +7,7 @@
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=05:00:00
-#SBATCH --mem=32GB
+#SBATCH --mem=64GB
 
 # Notification configuration 
 #SBATCH --mail-type=END                                         
@@ -34,7 +34,8 @@ case "${buildID}" in
                 ;;
     T2T_CHM13v2 )   genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/T2T_CHM13v2.0.ucsc.ebv.fa.gz"
                 ;;
-    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+    * )         buildID="GRCh38"
+                genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
                 echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
                 ;;
 esac
