@@ -5,8 +5,8 @@
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
-#SBATCH -n 16
-#SBATCH --time=24:00:00
+#SBATCH -n 8
+#SBATCH --time=18:00:00
 #SBATCH --mem=64GB
 
 # Notification configuration 
@@ -112,9 +112,9 @@ if [ -z "$seqPath" ]; then # If path to sequences not specified then do not proc
 	echo "## ERROR: You need to specify the path to the folder containing your fastq_pass folder. Don't include fastq_path in this name."
 	exit 1
 fi
-if [ ! -d "$seqPath/fastq_pass" ]; then # If the fastq_pass directory does not exist then do not proceed
+if [ ! -d "$seqPath/pass" ]; then # If the fastq_pass directory does not exist then do not proceed
     usage
-    echo "## ERROR: The fastq_pass directory needs to be in $seqPath. Don't include fastq_path in this name."
+    echo "## ERROR: The pass directory needs to be in $seqPath. Don't include fastq_path in this name."
 	exit 1
 fi
 
@@ -132,8 +132,8 @@ if "$barcodes"; then
         BC=($(cut -f1 $seqPath/barcodes.txt))
         sampleName=($(cut -f2 $seqPath/barcodes.txt))
     else
-        BC=($(ls $seqPath/fastq_pass/bar*))
-        sampleName=($(ls $seqPath/fastq_pass/bar*))
+        BC=($(ls $seqPath/pass/bar*))
+        sampleName=($(ls $seqPath/pass/bar*))
         echo "## INFO: Using generic barcodes as sample names (suggest to supply a barcodes.txt file in future)."
     fi
 fi
@@ -172,7 +172,7 @@ echo "## INFO: Using $LB for library name"
 # You could just scatter each file as an array job to an alignment but potentially this will be slower by loading up the queue
 
 if [ ! -f  "$seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz" ]; then
-    cd $seqPath/fastq_pass/${BC[$SLURM_ARRAY_TASK_ID]}
+    cd $seqPath/pass/${BC[$SLURM_ARRAY_TASK_ID]}
     fileType=$(ls | head -n1 | rev | cut -d"." -f1 | rev)
         case $fileType in
             gz)    cat *.gz > $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz
