@@ -20,7 +20,7 @@ modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b")
 # Hard coded paths and variables
 minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
 userDir="/hpcfs/users/${USER}"
-cores=8 # Set the same as above for -n
+cores=16 # Set the same as above for -n
 
 # Genome list (alter case statement below to add new options)
 set_genome_build() {
