@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH -J mm2ont-cDNA
-#SBATCH -o /hpcfs/users/%u/log/mm2ont-DNA-slurm-%j.out
+#SBATCH -J mm2ont-genome
+#SBATCH -o /hpcfs/users/%u/log/mm2ont-genome-slurm-%j.out
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
-#SBATCH -n 8
-#SBATCH --time=18:00:00
-#SBATCH --mem=64GB
+#SBATCH -n 16
+#SBATCH --time=24:00:00
+#SBATCH --mem=104GB
 
 # Notification configuration 
 #SBATCH --mail-type=END                                         
@@ -20,7 +20,7 @@ modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b")
 # Hard coded paths and variables
 minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
 userDir="/hpcfs/users/${USER}"
-cores=8 # Set the same as above for -n
+cores=16 # Set the same as above for -n
 
 # Genome list (alter case statement below to add new options)
 set_genome_build() {
@@ -48,8 +48,8 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 # submitted via the flags below or default options provided.
 # REQUIREMENTS: As a minimum you need the fastq_pass folder and the final_summary_xxx.txt file from your nanopore run.
 #
-# Usage: sbatch $0 -s /path/to/sequences [-o /path/to/output -g /path/to/genome.fa.gz -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
-# Usage (with barcodes): sbatch --array 0-(n-1 barcodes) $0 -s /path/to/sequences -b -o /path/to/output -g /path/to/genome.fa.gz -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
+# Usage: sbatch $0 -s /path/to/sequences [-o /path/to/output -g build_ID -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
+# Usage (with barcodes): sbatch --array 0-(n-1 barcodes) $0 -s /path/to/sequences -b -o /path/to/output -g build_ID -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
 #
 # Options
 # -s	REQUIRED. Path to the folder containing the fastq_pass folder.  Your final_summary_xxx.txt must be in this folder.
@@ -58,7 +58,7 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 # -S	OPTIONAL (with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
 #                from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
-# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5, T2T_CHM13v2 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
+# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5, T2T_CHM13v2 or GRCm38. Default is GRCh38 which is the GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
 #                 Default \"SQK-LSK110_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
@@ -70,6 +70,7 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 # 15/09/2020; Mark Corbett; Update Phoenix paths
 # 22/12/2021; Mark Corbett; Add in an option to select a genome build
 # 11/10/2022; Mark Corbett; Add buildID to .bam file name. Add T2T_CHM13v2 to genome list
+# 13/01/2023; Mark Corbett; Fork from the mm2.ONT.DNA.trad.sh script
 #
 "
 }
@@ -112,10 +113,16 @@ if [ -z "$seqPath" ]; then # If path to sequences not specified then do not proc
 	echo "## ERROR: You need to specify the path to the folder containing your fastq_pass folder. Don't include fastq_path in this name."
 	exit 1
 fi
-if [ ! -d "$seqPath/pass" ]; then # If the fastq_pass directory does not exist then do not proceed
-    usage
-    echo "## ERROR: The pass directory needs to be in $seqPath. Don't include fastq_path in this name."
-	exit 1
+if [ ! -d "$seqPath/fastq_pass" ]; then # If the fastq_pass directory does not exist then see if it is just called pass do not proceed
+    if [ ! -d "$seqPath/pass" ]; then
+        usage
+        echo "## ERROR: The fastq_pass or pass directory needs to be in $seqPath. Don't include fastq_pass or pass in this path."
+	    exit 1
+    else
+        fqDir="pass"
+    fi
+else
+    fqDir="fastq_pass"
 fi
 
 # Set the genome build using the function defined above.
@@ -132,8 +139,8 @@ if "$barcodes"; then
         BC=($(cut -f1 $seqPath/barcodes.txt))
         sampleName=($(cut -f2 $seqPath/barcodes.txt))
     else
-        BC=($(ls $seqPath/pass/bar*))
-        sampleName=($(ls $seqPath/pass/bar*))
+        BC=($(ls $seqPath/$fqDir/bar*))
+        sampleName=($(ls $seqPath/$fqDir/bar*))
         echo "## INFO: Using generic barcodes as sample names (suggest to supply a barcodes.txt file in future)."
     fi
 fi
@@ -172,7 +179,7 @@ echo "## INFO: Using $LB for library name"
 # You could just scatter each file as an array job to an alignment but potentially this will be slower by loading up the queue
 
 if [ ! -f  "$seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz" ]; then
-    cd $seqPath/pass/${BC[$SLURM_ARRAY_TASK_ID]}
+    cd $seqPath/$fqDir/${BC[$SLURM_ARRAY_TASK_ID]}
     fileType=$(ls | head -n1 | rev | cut -d"." -f1 | rev)
         case $fileType in
             gz)    cat *.gz > $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz
@@ -181,12 +188,12 @@ if [ ! -f  "$seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz" ]; then
                    cd ../
                    gzip $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq
                    ;;
-			fq)    cat *.fastq > $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq
+			fq)    cat *.fq > $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq
                    cd ../
                    gzip $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq
                    ;;
 			*)     usage
-                   echo "## ERROR: There doesn't appear to be fastq sequence files in $seqPath/fastq_pass/${BC[$SLURM_ARRAY_TASK_ID]}. This script checks for .gz, .fastq and .fq file types.  The first file type found was $fileType"
+                   echo "## ERROR: There doesn't appear to be fastq sequence files in $seqPath/$fqDir/${BC[$SLURM_ARRAY_TASK_ID]}. This script checks for .gz, .fastq and .fq file types.  The first file type found was $fileType"
                    exit 1
         esac
 else
