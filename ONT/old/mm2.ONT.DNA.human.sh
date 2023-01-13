@@ -1,13 +1,12 @@
 #!/bin/bash
-
-#SBATCH -J mm2ont-cDNA
-#SBATCH -o /hpcfs/users/%u/log/mm2ont-DNA-slurm-%j.out
+#SBATCH -J mm2ont-cDNA-wdl-sub
+#SBATCH -o /hpcfs/users/%u/log/mm2ont-cDNA-wdl-sub-slurm-%j.out
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
-#SBATCH -n 8
-#SBATCH --time=5:00:00
-#SBATCH --mem=32GB
+#SBATCH -n 1
+#SBATCH --time=05:05:00
+#SBATCH --mem=3GB
 
 # Notification configuration 
 #SBATCH --mail-type=END                                         
@@ -15,12 +14,18 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # Modules needed
-modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b")
+module load arch/haswell
+modJava="Java/9.0.4"
+modSAMtools="SAMtools/1.9-foss-2016b"
+modHTSlib="HTSlib/1.9-foss-2016b"
 
 # Hard coded paths and variables
+cromwellPath="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/cromwell"
+cromwellJar="cromwell-53.1.jar"
 minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
+scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/mark/longReads/ONT"
 userDir="/hpcfs/users/${USER}"
-cores=8 # Set the same as above for -n
+cores=8
 
 # Genome list (alter case statement below to add new options)
 set_genome_build() {
@@ -43,16 +48,16 @@ esac
 
 usage()
 {
-echo "# Script for mapping Oxford Nanopore reads to the human genome.
-# This script bypasses the mm2.ONT.DNA.wdl workflow and just submits the job directly.  The script sets up all of the required inputs using the information 
+echo "# Script for mapping Oxford Nanopore cDNA reads to the human genome.
+# This script coordinates submission of the mm2.ONT.cDNA.wdl workflow to phoenix.  The script sets up all of the required inputs using the information 
 # submitted via the flags below or default options provided.
-# REQUIREMENTS: As a minimum you need the fastq_pass or pass folder and the final_summary_xxx.txt file from your nanopore run.
+# REQUIREMENTS: As a minimum you need the fastq_pass folder and the final_summary_xxx.txt file from your nanopore run.
 #
-# Usage: sbatch $0 -s /path/to/sequences [-o /path/to/output -g build_ID -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
-# Usage (with barcodes): sbatch --array 0-(n-1 barcodes) $0 -s /path/to/sequences -b [-o /path/to/output -g build_ID -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
+# Usage: sbatch $0 -s /path/to/sequences [-o /path/to/output -g /path/to/genome.fa.gz -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
+# Usage (with barcodes): sbatch --array 0-(n-1 barcodes) $0 -s /path/to/sequences -b -o /path/to/output -g /path/to/genome.fa.gz -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
 #
 # Options
-# -s	REQUIRED. Path to the folder containing the fastq_pass or pass folder.  Your final_summary_xxx.txt must be in this folder.
+# -s	REQUIRED. Path to the folder containing the fastq_pass folder.  Your final_summary_xxx.txt must be in this folder.
 # -b    DEPENDS.  If you used barcodes set the -b flag.  If you want meaningful sample ID add a file called barcodes.txt to the sequence folder with the 
 #                 tab delimited barcode and ID on each line.
 # -S	OPTIONAL (with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
@@ -75,6 +80,7 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 }
 
 ## Set Variables ##
+## Set Variables ##
 while [ "$1" != "" ]; do
 	case $1 in
         -s )            shift
@@ -87,7 +93,7 @@ while [ "$1" != "" ]; do
                         sampleName=$1
                         ;;
         -o )            shift
-                        workDir=$1
+                        outputDir=$1
                         ;;
         -g )            shift
                         buildID=$1
@@ -96,7 +102,7 @@ while [ "$1" != "" ]; do
                         LB=$1
                         ;;
 		-I )            shift
-                        ID=$1
+                        readGroupID=$1
                         ;;
         -h | --help )   usage
                         exit 0
@@ -112,16 +118,10 @@ if [ -z "$seqPath" ]; then # If path to sequences not specified then do not proc
 	echo "## ERROR: You need to specify the path to the folder containing your fastq_pass folder. Don't include fastq_path in this name."
 	exit 1
 fi
-if [ ! -d "$seqPath/fastq_pass" ]; then # If the fastq_pass directory does not exist then see if it is just called pass do not proceed
-    if [ ! -d "$seqPath/pass" ]; then
-        usage
-        echo "## ERROR: The fastq_pass or pass directory needs to be in $seqPath. Don't include fastq_pass or pass in this path."
-	    exit 1
-    else
-        fqDir="pass"
-    fi
-else
-    fqDir="fastq_pass"
+if [ ! -d "$seqPath/fastq_pass" ]; then # If the fastq_pass directory does not exist then do not proceed
+    usage
+    echo "## ERROR: The fastq_pass directory needs to be in $seqPath. Don't include fastq_path in this name."
+	exit 1
 fi
 
 # Set the genome build using the function defined above.
@@ -138,8 +138,8 @@ if "$barcodes"; then
         BC=($(cut -f1 $seqPath/barcodes.txt))
         sampleName=($(cut -f2 $seqPath/barcodes.txt))
     else
-        BC=($(ls $seqPath/$fqDir/bar*))
-        sampleName=($(ls $seqPath/$fqDir/bar*))
+        BC=($(ls $seqPath/fastq_pass/bar*))
+        sampleName=($(ls $seqPath/fastq_pass/bar*))
         echo "## INFO: Using generic barcodes as sample names (suggest to supply a barcodes.txt file in future)."
     fi
 fi
@@ -155,13 +155,13 @@ if [ -z "${sampleName[$SLURM_ARRAY_TASK_ID]}" ]; then # If sample name not speci
     fi
 fi
 
-if [ -z "$workDir" ]; then # If no output directory then use default directory
-    workDir=$userDir/ONT/DNA/${sampleName[$SLURM_ARRAY_TASK_ID]}
-    echo "## INFO: Using $workDir as the output directory"
+if [ -z "$outputDir" ]; then # If no output directory then use default directory
+    outputDir=$userDir/ONT/DNA/${sampleName[$SLURM_ARRAY_TASK_ID]}
+    echo "## INFO: Using $outputDir as the output directory"
 fi
 
-if [ ! -d "$workDir" ]; then
-    mkdir -p $workDir
+if [ ! -d "$outputDir" ]; then
+    mkdir -p $outputDir
 fi
 
 if [ -z "$LB" ]; then # If library not specified try to make a specfic one or use "SQK-LSK110" as default
@@ -178,7 +178,7 @@ echo "## INFO: Using $LB for library name"
 # You could just scatter each file as an array job to an alignment but potentially this will be slower by loading up the queue
 
 if [ ! -f  "$seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz" ]; then
-    cd $seqPath/$fqDir/${BC[$SLURM_ARRAY_TASK_ID]}
+    cd $seqPath/fastq_pass/${BC[$SLURM_ARRAY_TASK_ID]}
     fileType=$(ls | head -n1 | rev | cut -d"." -f1 | rev)
         case $fileType in
             gz)    cat *.gz > $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz
@@ -187,34 +187,46 @@ if [ ! -f  "$seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz" ]; then
                    cd ../
                    gzip $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq
                    ;;
-			fq)    cat *.fq > $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq
+			fq)    cat *.fastq > $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq
                    cd ../
                    gzip $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq
                    ;;
 			*)     usage
-                   echo "## ERROR: There doesn't appear to be fastq sequence files in $seqPath/$fqDir/${BC[$SLURM_ARRAY_TASK_ID]}. This script checks for .gz, .fastq and .fq file types.  The first file type found was $fileType"
+                   echo "## ERROR: There doesn't appear to be fastq sequence files in $seqPath/fastq_pass/${BC[$SLURM_ARRAY_TASK_ID]}. This script checks for .gz, .fastq and .fq file types.  The first file type found was $fileType"
                    exit 1
         esac
 else
     echo "## WARN: A fastq file $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz already exists so I'm going to use it.
                    If this isn't what you wanted you'll need to remove or move this file before you run this workflow again."
 fi
+seqFile=$seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz
 
-if [ -z "$ID" ]; then # If no ID then fetch from the .fastq file
-    ID=$(zcat $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz | head -n 1 | tr " " "\n" | grep runid | cut -f2 -d"=")
+if [ -z "$readGroupID" ]; then # If no ID then fetch from the .fastq file
+    readGroupID=$(zcat $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz | head -n 1 | tr " " "\n" | grep runid | cut -f2 -d"=")
 fi
-echo "## INFO: Using $ID for the sequence ID"
+echo "## INFO: Using $readGroupID for the sequence ID"
 
-## Load modules ##
-for mod in "${modList[@]}"; do
-    module load $mod
-done
+# Build the input .json file
+cd $outputDir
+echo "{
+  \"minimap2_ONT_cDNA.mimimap2.samtools\": \"$modSAMtools\",
+  \"minimap2_ONT_cDNA.mimimap2.platform\": \"ONT\",
+  \"minimap2_ONT_cDNA.mimimap2.htslib\": \"$modHTSlib\",
+  \"minimap2_ONT_cDNA.mimimap2.seqFile\": \"$seqFile\",
+  \"minimap2_ONT_cDNA.mimimap2.program\": \"$minimapProg\",
+  \"minimap2_ONT_cDNA.mimimap2.cores\": \"$cores\",
+  \"minimap2_ONT_cDNA.mimimap2.LB\": \"$LB\",
+  \"minimap2_ONT_cDNA.mimimap2.sampleName\": \"$sampleName[$SLURM_ARRAY_TASK_ID]\",
+  \"minimap2_ONT_cDNA.mimimap2.genomeBuild\": \"$genomeBuild\",
+  \"minimap2_ONT_cDNA.mimimap2.buildID\": \"$buildID\",
+  \"minimap2_ONT_cDNA.mimimap2.outputDir\": \"$outputDir\",
+  \"minimap2_ONT_cDNA.mimimap2.readGroupID\": \"$readGroupID\"
+}
+" > $outputDir/$sampleName[$SLURM_ARRAY_TASK_ID].inputs.json
 
-## Run the script ##
-cd $workDir
-${minimapProg} -ax map-ont \
--R "@RG\\tID:${ID}\\tLB:${LB}\\tPL:ONT\\tSM:${sampleName[$SLURM_ARRAY_TASK_ID]}" \
--t ${cores} ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz |\
-samtools view -bT ${genomeBuild} - |\
-samtools sort -l 5 -m 4G -@${cores} -T${sampleName[$SLURM_ARRAY_TASK_ID]} -o ${workDir}/${sampleName[$SLURM_ARRAY_TASK_ID]}.sort.${buildID}.bam -
-samtools index ${workDir}/${sampleName[$SLURM_ARRAY_TASK_ID]}.sort.${buildID}.bam
+## Submit the workflow to the queue ##
+module load $modJava
+java -Dconfig.file=$scriptDir/cromwell_slurm.conf \
+-jar $cromwellPath/$cromwellJar \
+run $scriptDir/mm2.ONT.DNA.wdl \
+--inputs $outputDir/$sampleName[$SLURM_ARRAY_TASK_ID].inputs.json
