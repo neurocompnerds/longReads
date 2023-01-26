@@ -1,13 +1,13 @@
 #!/bin/bash
 
 #SBATCH -J sniffles
-#SBATCH -o /hpcfs/users/%u/log/sniffles.slurm-%j.out
+#SBATCH -o /hpcfs/users/%u/log/sniffles-slurm-%j.out
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
 #SBATCH -n 4
-#SBATCH --time=08:00:00
-#SBATCH --mem=16GB
+#SBATCH --time=00:30:00
+#SBATCH --mem=8GB
 
 # Notification configuration 
 #SBATCH --mail-type=END                                         
