@@ -15,8 +15,8 @@
 
 # Set common paths and defaults
 userDir="/hpcfs/users/${USER}"
+
 # canu.PB.ONT.Phoenix.sh A script to de novo assemble PacBio and Oxford Nanopore sequencing using Canu. Designed for the Phoenix supercomputer
-userDir="/hpcfs/users/$USER"
 usage()
 {
 echo "# A script to de novo assemble PacBio and Oxford Nanopore sequencing using Canu. Designed for the Phoenix supercomputer
