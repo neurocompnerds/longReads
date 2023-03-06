@@ -1,6 +1,22 @@
 #!/bin/bash
-# canu.PB.ONT.Phoenix.sh A script to de novo assemble PacBio and Oxford Nanopore sequencing using Canu. Designed for the Phoenix supercomputer
+#SBATCH -J canu.launch
+#SBATCH -o /hpcfs/users/%u/log/canu.launch-slurm-%j.out
+#SBATCH -A robinson
+#SBATCH -p batch
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --time=3-00:00:00
+#SBATCH --mem=1GB
 
+# Notification configuration 
+#SBATCH --mail-type=END                                         
+#SBATCH --mail-type=FAIL                                        
+#SBATCH --mail-user=%u@adelaide.edu.au
+
+# Set common paths and defaults
+userDir="/hpcfs/users/${USER}"
+# canu.PB.ONT.Phoenix.sh A script to de novo assemble PacBio and Oxford Nanopore sequencing using Canu. Designed for the Phoenix supercomputer
+userDir="/hpcfs/users/$USER"
 usage()
 {
 echo "# A script to de novo assemble PacBio and Oxford Nanopore sequencing using Canu. Designed for the Phoenix supercomputer
@@ -13,13 +29,13 @@ echo "# A script to de novo assemble PacBio and Oxford Nanopore sequencing using
 # /path/to/my/fastq/ONT/ONT.reads.fastq.gz
 #
 # Usage: 
-# $0 -p Prefix [ -s /path/to/sequence/files -o /path/to/output ] | [ -h | --help ]
+# sbatch $0 -p Prefix -s /path/to/sequence/files [ -o /path/to/output -g genome_size ] | [ -h | --help ]
 #
 # Options:
 # -p	REQUIRED. Prefix ( value = \$outPrefix ) for file names. Can be any string of text without spaces or reserved special characters.
-# -s	OPTIONAL. /path/to/sequence/files The top level directory that will contain either PacBio/ or ONT/ folders or both depending on what data you have. Default is $FASTDIR/fastq/Canu/\$outPrefix
-#                 If you intend to use the default then you'll need to make that directory manually before running the script.
-# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $FASTDIR/Canu/\$outPrefix is used)
+# -s	REQUIRED. /path/to/sequence/files The top level directory that will contain either PacBio/ or ONT/ folders or both depending on what data you have.
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/Canu/\$outPrefix is used)
+# -g    OPTIONAL. Genome size. Default 3.2g for human (mouse is 2.7g).
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you might be reading this too!
 #
 # 
@@ -35,10 +51,10 @@ while [ "$1" != "" ]; do
 					outPrefix=$1
 					;;
 		-s )			shift
-					pbDir=$1
+					seqDir=$1
 					;;
-		--ont )			shift
-					ontDir=$1
+		-g )			shift
+					genomeSize=$1
 					;;
 		-o )			shift
 					workDir=$1
@@ -59,13 +75,18 @@ if [ -z "$outPrefix" ]; then # If no output prefix is specified then get eaten b
 	# eg. -p myFileName"
 	exit 1
 fi
-if [ -z "$seqDir" ]; then # If path to sequences not specified then use default location
-	seqDir=$FASTDIR/fastq/Canu/$outPrefix
-	echo "#INFO: Using $seqDir to locate files"
+if [ -z "$seqDir" ]; then # If path to sequences not specified then fail
+    usage
+	echo "## ERROR: You need to tell me where to locate your fastq files"
+	exit 1
 fi
 if [ -z "$workDir" ]; then # If no output directory then use default location
-	workDir=$FASTDIR/Canu/$outPrefix
+	workDir=$userDir/Canu/$outPrefix
 	echo "#INFO: Using $workDir as the output directory"
+fi
+if [ -z "$genomeSize" ]; then # If genome not specified assume human
+	genomeSize="3.2g"
+	echo "#INFO: Using $genomeSize as the genome size which corresponds to human."
 fi
 
 if [ ! -d "$workDir" ]; then
@@ -82,13 +103,14 @@ fi
 #                     O_
 #               \-----\/---/
 # Launch Canu  ~~\~~~~/~~~/~~
-module load canu/2.0-foss-2016b
+module load arch/skylake
+module load canu/2.1.1
 
 # Start paddling
-canu -p $outPrefix -d $workDir genomeSize=3.6g \
+canu -p $outPrefix -d $workDir genomeSize=$genomeSize \
 gridOptionsJobName="canu" \
 gridOptions=" -A robinson -p batch --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
 merylMemory=125 \
-gridOptionsBAT=" -o $FASTDIR/log/canu.slurm-%j.out -A robinson -p highmem --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
+gridOptionsBAT=" -o $userDir/log/canu.slurm-%j.out -A robinson -p highmem --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
 $pbReads $ontReads
 
