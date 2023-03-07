@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 #SBATCH -J sniffles
 #SBATCH -o /hpcfs/users/%u/log/sniffles-slurm-%j.out
