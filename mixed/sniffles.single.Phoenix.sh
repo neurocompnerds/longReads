@@ -21,7 +21,7 @@ neuroDir="/hpcfs/groups/phoenix-hpc-neurogenetics"
 refDir="$neuroDir/RefSeq"
 module purge
 module use /apps/skl/modules/all
-modList=("SAMtools/1.17-GCCcore-11.2.0" "Anaconda3/2020.07")
+modList=("SAMtools/1.17-GCC-11.2.0" "Anaconda3/2020.07")
 
 usage()
 {

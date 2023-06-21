@@ -16,7 +16,7 @@
 # Modules needed
 module purge
 module use /apps/skl/modules/all
-modList=("HTSlib/1.17-GCCcore-11.2.0" "SAMtools/1.17-GCCcore-11.2.0")
+modList=("HTSlib/1.17-GCC-11.2.0" "SAMtools/1.17-GCC-11.2.0")
 
 # Hard coded paths and variables
 userDir="/hpcfs/users/${USER}"

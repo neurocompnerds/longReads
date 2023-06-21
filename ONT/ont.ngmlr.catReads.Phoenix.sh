@@ -22,7 +22,7 @@ sambambaProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/sambamba-0.8.2
 # Modules needed
 module purge
 module use /apps/skl/modules/all
-modList=("SAMtools/1.17-GCCcore-11.2.0" "HTSlib/1.17-GCCcore-11.2.0")
+modList=("SAMtools/1.17-GCC-11.2.0" "HTSlib/1.17-GCC-11.2.0")
 
 usage()
 {

@@ -16,7 +16,7 @@
 # Modules needed
 module purge
 module use /apps/skl/modules/all
-modList=("SAMtools/1.17-GCCcore-11.2.0" "HTSlib/1.17-GCCcore-11.2.0")
+modList=("SAMtools/1.17-GCC-11.2.0" "HTSlib/1.17-GCC-11.2.0")
 
 # Hard coded paths and variables
 minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
