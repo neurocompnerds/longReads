@@ -1,8 +1,7 @@
 #!/bin/bash
 #SBATCH -J canu.launch
 #SBATCH -o /hpcfs/users/%u/log/canu.launch-slurm-%j.out
-#SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --time=3-00:00:00
@@ -103,14 +102,15 @@ fi
 #                     O_
 #               \-----\/---/
 # Launch Canu  ~~\~~~~/~~~/~~
-module load arch/skylake
+module purge
+module use /apps/skl/modules/all
 module load canu/2.1.1
 
 # Start paddling
 canu -p $outPrefix -d $workDir genomeSize=$genomeSize \
 gridOptionsJobName="canu" \
-gridOptions="-N 1 -A robinson -p batch --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
+gridOptions="-N 1 -p skylake,icelake,skylakehm,v100cpu --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
 merylMemory=125 \
-gridOptionsBAT=" -o $userDir/log/canu.slurm-%j.out -A robinson -p highmem --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
+gridOptionsBAT=" -o $userDir/log/canu.slurm-%j.out -p highmem --time=72:00:00 --mail-type=END --mail-type=FAIL --mail-user=$USER@adelaide.edu.au" \
 $pbReads $ontReads
 

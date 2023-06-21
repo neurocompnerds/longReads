@@ -1,9 +1,8 @@
 #!/bin/bash
 
 #SBATCH -J BLASR
-#SBATCH -o /fast/users/%u/launch/slurm-%j.out
-#SBATCH -A robinson
-#SBATCH -p test
+#SBATCH -o /hpcfs/users/%u/log/slurm-%j.out
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=01:00:00

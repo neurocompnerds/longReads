@@ -2,8 +2,7 @@
 
 #SBATCH -J mm2ont-cDNA
 #SBATCH -o /hpcfs/users/%u/log/mm2ont-DNA-slurm-%j.out
-#SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=5:00:00
@@ -15,7 +14,9 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # Modules needed
-modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b")
+module purge
+module use /apps/skl/modules/all
+modList=("SAMtools/1.17-GCCcore-11.2.0" "HTSlib/1.17-GCCcore-11.2.0")
 
 # Hard coded paths and variables
 minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
@@ -34,9 +35,9 @@ case "${buildID}" in
                 ;;
     T2T_CHM13v2 )   genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/T2T_CHM13v2.0.ucsc.ebv.fa.gz"
                 ;;
-    * )         buildID="GRCh38"
-                genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
-                echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
+    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+                echo "## WARN: Genome build ${buildID} not recognized, the default genome GRCh38 will be used."
+                buildID="GRCh38"
                 ;;
 esac
 }
@@ -167,9 +168,9 @@ fi
 if [ -z "$LB" ]; then # If library not specified try to make a specfic one or use "SQK-LSK110" as default
     if [ -f "$finalSummaryFile" ]; then
         protocol_group_id=$(grep protocol_group_id $finalSummaryFile | cut -f2 -d"=") 
-        LB="SQK-LSK110-$protocol_group_id"
+        LB="SQK-LSK114-$protocol_group_id"
     else 
-        LB="SQK-LSK110"
+        LB="SQK-LSK114"
     fi
 fi
 echo "## INFO: Using $LB for library name"

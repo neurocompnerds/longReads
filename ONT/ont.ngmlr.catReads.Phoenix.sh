@@ -2,8 +2,7 @@
 
 #SBATCH -J ngmlr
 #SBATCH -o /hpcfs/users/%u/log/ngmlr.ont.slurm-%j.out
-#SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=24:00:00
@@ -12,13 +11,18 @@
 # Notification configuration 
 #SBATCH --mail-type=END                                         
 #SBATCH --mail-type=FAIL                                        
-#SBATCH --mail-user=%u@adelaide.edu.au
+#SBATCH --mail-user=${USER}@adelaide.edu.au
 
 # run the executable
-# A script to map PacBio data with SV detection optimised. Designed for the Phoenix supercomputer
+# A script to map ONT data with SV detection optimised. Designed for the Phoenix supercomputer
 # Set common paths
 exeDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/ngmlr/ngmlr-0.2.7/"
 userDir="/hpcfs/users/${USER}"
+sambambaProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/sambamba-0.8.2-linux-amd64-static"
+# Modules needed
+module purge
+module use /apps/skl/modules/all
+modList=("SAMtools/1.17-GCCcore-11.2.0" "HTSlib/1.17-GCCcore-11.2.0")
 
 usage()
 {
@@ -96,16 +100,15 @@ if [ ! -d "$workDir" ]; then
 fi
 
 # load modules
-module load arch/haswell
-module load HTSlib/1.3.1-foss-2016b
-module load SAMtools/1.3.1-foss-2016b
-module load sambamba/0.6.6-foss-2016b
+for mod in "${modList[@]}"; do
+    module load $mod
+done
 
 cat $seqDir/*.fastq.gz > $tmpDir/$outPrefix.reads.fastq.gz
 
 $exeDir/ngmlr --bam-fix --no-progress -t 16 -x ont -r $genome -q $tmpDir/$outPrefix.reads.fastq.gz |\
 samtools view -@ 16 -bT $genome - |\
-sambamba sort -l 5 -m 4G -t 16 --tmpdir=$tmpDir -o $workDir/$outPrefix.sort.ngmlr.ont.$shortGenome.bam /dev/stdin
-sambamba index $workDir/$outPrefix.sort.ngmlr.ont.$shortGenome.bam
+$sambambaProg sort -l 5 -m 4G -t 16 --tmpdir=$tmpDir -o $workDir/$outPrefix.sort.ngmlr.ont.$shortGenome.bam /dev/stdin
+$sambambaProg index $workDir/$outPrefix.sort.ngmlr.ont.$shortGenome.bam
 # Clean up
 rm -r $tmpDir
