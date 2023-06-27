@@ -2,8 +2,7 @@
 
 #SBATCH -J megaMeth
 #SBATCH -o /hpcfs/users/%u/log/megaMeth-slurm-%j.out
-#SBATCH -A robinson
-#SBATCH -p v100
+#SBATCH -p v100,a100
 #SBATCH -N 1
 #SBATCH -n 32
 #SBATCH --gres=gpu:2
@@ -17,7 +16,9 @@
 
 # Hard coded paths and variables
 # Module list
-modList=("arch/skylake" "arch/haswell" "Anaconda3/2020.07" "HTSlib/1.10.2-foss-2016b" "SAMtools/1.10-foss-2016b")
+module purge
+module use /apps/skl/modules/all
+modList=("SAMtools/1.17-GCC-11.2.0" "HTSlib/1.17-GCC-11.2.0" "Anaconda3/2020.07")
 
 # Paths
 userDir="/hpcfs/users/${USER}"
@@ -29,14 +30,18 @@ cores=30 # Set the same as above for -n
 # Genome list (alter case statement below to add new options)
 set_genome_build() {
 case "${buildID}" in
-    GRCh38 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.mmi"
+    GRCh38 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
                 ;;
     hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/hs37d5.fa.gz"
                 ;;
-    GRCm38 | mm10 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
+    GRCm38 | mm10 ) buildID="GRCm38"   
+                    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
                 ;;
-    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.mmi"
-                echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
+    T2T_CHM13v2 )   genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/T2T_CHM13v2.0.ucsc.ebv.fa.gz"
+                ;;
+    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+                echo "## WARN: Genome build ${buildID} not recognized, the default genome GRCh38 will be used."
+                buildID="GRCh38"
                 ;;
 esac
 }
@@ -47,13 +52,13 @@ echo "# Script for calling methylation from Oxford Nanopore reads.
 #
 # REQUIREMENTS: As a minimum you need the fast5_pass folder and the final_summary_xxx.txt file from your nanopore run.
 #
-# Usage: sbatch $0 -s /path/to/fast5_folders -g [GRCh38 | hs37d5] -B | [ - h | --help ]
+# Usage: sbatch $0 -s /path/to/fast5_folders -g [GRCh38 | hs37d5 | GRCm38 | T2T_CHM13v2] -B | [ - h | --help ]
 #
 # Options
 # -s    REQUIRED.    Path to the folder containing the fast5 folder or folders (don't include fast5_pass)
 # -S    CONDITIONAL. Either a sample name must be supplied or the final_summary.txt file is needed in /path/to/fast5_folders
 # -o    OPTIONAL.    Path to output.  Default is /path/to/fast5_folders/megalodon_output
-# -g    OPTIONAL.    Genome build to use, select from either GRCh38, hs37d5 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
+# -g    OPTIONAL.    Genome build to use, select from either GRCh38, hs37d5, T2T_CHM13v2 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -B    OPTIONAL.    Flag to make an in silico bisulfite conversion of the 5mC data
 # -h or --help       Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 #

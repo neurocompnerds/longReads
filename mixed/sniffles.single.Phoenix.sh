@@ -2,8 +2,7 @@
 
 #SBATCH -J sniffles
 #SBATCH -o /hpcfs/users/%u/log/sniffles-slurm-%j.out
-#SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 4
 #SBATCH --time=00:30:00
@@ -20,10 +19,10 @@
 userDir="/hpcfs/users/${USER}"
 neuroDir="/hpcfs/groups/phoenix-hpc-neurogenetics"
 refDir="$neuroDir/RefSeq"
-customModDir="$neuroDir/executables/easybuild/modules/all"
-modList=("arch/skylake" "SAMtools/1.12" "Anaconda3/2020.07")
+module purge
+module use /apps/skl/modules/all
+modList=("SAMtools/1.17-GCC-11.2.0" "Anaconda3/2020.07")
 
-supportReads=10
 usage()
 {
 echo "# A script to structural variants from pacbio aligned with ngmlr. Designed for the Phoenix supercomputer
@@ -91,7 +90,6 @@ while [ "$1" != "" ]; do
 	case $1 in
 		-b )		shift
 					bamFile=$1
-					bamDir=$(dirname $bamFile)
 					outPrefix=$(basename -s .bam $bamFile)
 					;;
         -g )        shift
@@ -116,9 +114,6 @@ if [ -z "$bamFile" ]; then # If the bam or cram file isn't specified then give u
 	exit 1
 fi
 
-fullBamFile=$( basename ${bamFile} )
-baseBamFile=${fullBamFile%.*}
-
 ## Load modules ##
 module use $customModDir
 for mod in "${modList[@]}"; do
@@ -141,6 +136,6 @@ fi
 
 conda activate sniffles
 
-sniffles --input $bamFile --vcf $workDir/$baseBamFile.vcf.gz --reference $genomeBuild
+sniffles --input $bamFile --vcf $workDir/$outPrefix.vcf.gz --reference $genomeBuild
 
 conda deactivate

@@ -2,8 +2,7 @@
 
 #SBATCH -J LAST-gDNA
 #SBATCH -o /hpcfs/users/%u/log/LAST-gDNA-slurm-%j.out
-#SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=10:00:00
@@ -12,15 +11,16 @@
 # Notification configuration 
 #SBATCH --mail-type=END                                         
 #SBATCH --mail-type=FAIL                                        
-#SBATCH --mail-user=%u@adelaide.edu.au
+#SBATCH --mail-user=${USER}@adelaide.edu.au
 
 # Modules needed
-modList=("arch/haswell" "SAMtools/1.9-foss-2016b" "HTSlib/1.9-foss-2016b" "R" "Python/3.7.0")
+module purge
+module use /apps/skl/modules/all
+modList=("HTSlib/1.17-GCC-11.2.0" "SAMtools/1.17-GCC-11.2.0")
 
 # Hard coded paths and variables
 userDir="/hpcfs/users/${USER}"
-lastProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/last/bin/"
-tandemGenotypesProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/tandem-genotypes"
+lastProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/last_latest/bin/"
 cores=8 # Set the same as above for -n
 
 # Genome list (alter case statement below to add new options)
@@ -35,9 +35,9 @@ case "${buildID}" in
                 ;;
     T2T_CHM13v2 )   genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/T2T_CHM13v2.0.ucsc.ebv.fa.gz"
                 ;;
-    * )         buildID="GRCh38"
-                genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
-                echo "## WARN: Genome build ${buildID} not recognized, the default genome will be used."
+    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+                echo "## WARN: Genome build ${buildID} not recognized, the default genome GRCh38 will be used."
+                buildID="GRCh38"
                 ;;
 esac
 }
