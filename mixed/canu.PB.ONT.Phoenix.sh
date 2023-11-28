@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J canu.launch
 #SBATCH -o /hpcfs/users/%u/log/canu.launch-slurm-%j.out
-#SBATCH -p skylake,icelake,skylakehm,v100cpu
+#SBATCH -p skylake,icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --time=3-00:00:00

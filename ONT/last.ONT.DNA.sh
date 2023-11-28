@@ -2,7 +2,7 @@
 
 #SBATCH -J LAST-gDNA
 #SBATCH -o /hpcfs/users/%u/log/LAST-gDNA-slurm-%j.out
-#SBATCH -p skylake,icelake,skylakehm,v100cpu
+#SBATCH -p skylake,icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=10:00:00

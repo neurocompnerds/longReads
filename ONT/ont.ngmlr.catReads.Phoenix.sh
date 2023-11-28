@@ -2,7 +2,7 @@
 
 #SBATCH -J ngmlr
 #SBATCH -o /hpcfs/users/%u/log/ngmlr.ont.slurm-%j.out
-#SBATCH -p skylake,icelake,skylakehm,v100cpu
+#SBATCH -p skylake,icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=24:00:00

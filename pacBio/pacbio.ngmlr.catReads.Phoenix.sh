@@ -3,7 +3,7 @@
 #SBATCH -J ngmlr
 #SBATCH -o /fast/users/%u/launch/ngmlr.slurm-%j.out
 #SBATCH -A robinson
-#SBATCH -p skylake,icelake,skylakehm,v100cpu
+#SBATCH -p skylake,icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=24:00:00
