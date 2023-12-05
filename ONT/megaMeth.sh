@@ -2,7 +2,7 @@
 
 #SBATCH -J megaMeth
 #SBATCH -o /hpcfs/users/%u/log/megaMeth-slurm-%j.out
-#SBATCH -p v100,a100
+#SBATCH -p a100
 #SBATCH -N 1
 #SBATCH -n 32
 #SBATCH --gres=gpu:2
