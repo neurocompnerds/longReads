@@ -13,7 +13,7 @@
 
 # Set fixed variables:
 SHASTA="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/shasta-Linux-0.11.1"
-gzipScript="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/map-n-call-utilities/bulkGzip.sh"
+gzipScript="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/map-n-call/utilities/bulkGzip.sh"
 userDir="/hpcfs/users/${USER}"
 CONFIG=Nanopore-May2022
 
@@ -47,7 +47,7 @@ while [ "$1" != "" ]; do
                                         seqPath=$1
                                         ;;
                 -o )                    shift
-                                        OUTDIR=$1
+                                        outDir=$1
                                         ;;
                 -S )                    shift
                                         sampleName=$1
@@ -123,13 +123,13 @@ else
 fi
 
 # Find or create the output directory
-if [ -z "$OUTDIR" ]; then # If no output directory then use default directory
-    OUTDIR=$userDir/assemblies/ONT/${sampleName}
-    echo "## INFO: Using $OUTDIR as the output directory"
+if [ -z "$outDir" ]; then # If no output directory then use default directory
+    outDir=$userDir/assemblies/ONT/${sampleName}
+    echo "## INFO: Using $outDir as the output directory"
 fi
 
-if [ ! -d "$OUTDIR" ]; then
-    mkdir -p $OUTDIR
+if [ ! -d "$outDir" ]; then
+    mkdir -p $outDir
 fi
 
 if [ "${fileIsZipped}" = TRUE ]; then
@@ -140,7 +140,7 @@ if [ "${fileIsZipped}" = TRUE ]; then
     echo "${USER} is currently running Shasta on this file which is why it is not gzipped.  Please leave until the run is finished." > ${seqFolder}/${seqFile}.Not.gzipped.txt
 fi
 
-${SHASTA} --input ${seqPath} --config ${CONFIG} --assemblyDirectory ${OUTDIR} --Reads.minReadLength 5000 --threads 30
+${SHASTA} --input ${seqPath} --config ${CONFIG} --assemblyDirectory ${outDir} --Reads.minReadLength 5000 --threads 30
 
 if [ "${fileIsZipped}" = TRUE ]; then
     gzip ${seqPath}

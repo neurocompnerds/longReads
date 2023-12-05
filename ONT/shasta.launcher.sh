@@ -2,8 +2,8 @@
 
 # Set fixed variables:
 shastaScript="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/mark/longReads/ONT/shasta.sh"
-gunzipScript="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/map-n-call-utilities/bulkUnzip.sh"
-gzipScript="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/map-n-call-utilities/bulkGzip.sh"
+gunzipScript="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/map-n-call/utilities/bulkUnzip.sh"
+gzipScript="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/map-n-call/utilities/bulkGzip.sh"
 userDir="/hpcfs/users/${USER}"
 CONFIG=Nanopore-May2022
 logDir="/hpcfs/users/${USER}/log"
@@ -41,7 +41,7 @@ while [ "$1" != "" ]; do
                                         seqPath=$1
                                         ;;
                 -o )                    shift
-                                        OUTDIR=$1
+                                        outDir=$1
                                         ;;
                 -S )                    shift
                                         sampleName=$1
@@ -61,7 +61,7 @@ done
 
 # Assume $seqPath and the final_summary file exists for now
 finalSummaryFile=$(find $seqPath/final_summary_*)
-if [ ! -f "$finalSummaryFile" ]; then
+if [ ! -f "$finalSummaryFile" ]; then # If SeqPath was a fastq file then check the folder containing that fastq for the final_summary_* file
     finalSummaryFile=$(find $(dirname ${seqPath})/final_summary_*)
 fi
 
@@ -117,26 +117,26 @@ else
 fi
 
 # Find or create the output directory
-if [ -z "$OUTDIR" ]; then # If no output directory then use default directory
-    OUTDIR=$userDir/assemblies/ONT/${sampleName}
-    echo "## INFO: Using $OUTDIR as the output directory"
+if [ -z "$outDir" ]; then # If no output directory then use default directory
+    outDir=$userDir/assemblies/ONT/${sampleName}
+    echo "## INFO: Using $outDir as the output directory"
 fi
 
-if [ ! -d "$OUTDIR" ]; then
-    mkdir -p $OUTDIR
+if [ ! -d "$outDir" ]; then
+    mkdir -p $outDir
 fi
 
 if [ "${fileIsZipped}" = TRUE ]; then
     seqFile=$(basename ${seqPath} .gz)
     seqFolder=$(dirname ${seqPath})
-    UnzipJob=`sbatch gunzipScript -i file.to.unzip.for.shasta.txt`
+    UnzipJob=`sbatch $gunzipScript -i file.to.unzip.for.shasta.txt`
     UnzipJob=$(echo $UnzipJob | cut -d" " -f4)
     seqPath=${seqFolder}/${seqFile}
     echo "${seqFolder}/${seqFile}" > file.to.gzip.txt
-    shastaJob=`sbatch --dependency=afterok:${UnzipJob} ${shastaScript} -s ${seqPath} -o ${OUTDIR} -S ${sampleName} -c ${CONFIG}`
+    shastaJob=`sbatch --dependency=afterok:${UnzipJob} ${shastaScript} -s ${seqPath} -o ${outDir} -S ${sampleName} -c ${CONFIG}`
     shastaJob=$(echo $shastaJob | cut -d" " -f4)
     sbatch --dependency=afterok:${shastaJob} $gzipScript -i file.to.gzip.txt
 else
-    sbatch ${shastaScript} -s ${seqPath} -o ${OUTDIR} -S ${sampleName} -c ${CONFIG}
+    sbatch ${shastaScript} -s ${seqPath} -o ${outDir} -S ${sampleName} -c ${CONFIG}
     echo "## INFO: Please consider storing your sequence files in gzipped format.  This launcher script is written to handle decompressing reads for shasta then compressing again when everything is finished."
 fi
