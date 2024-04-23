@@ -99,7 +99,7 @@ if [ ! -f  "$seqPath" ]; then
         fqDir="fastq_pass"
     fi
     if [ ! -f  "${seqPath}/${sampleName}.fastq.gz" ]; then
-        cat ${seqPath}/${fqDir}/*.gz > ${seqPath}/${sampleName}.fastq.gz
+        ls ${seqPath}/${fqDir}/*.gz | xargs cat >> ${seqPath}/${sampleName}.fastq.gz
         seqPath=${seqPath}/${sampleName}.fastq.gz
     else
         seqPath=${seqPath}/${sampleName}.fastq.gz
