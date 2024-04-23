@@ -2,7 +2,7 @@
 
 #SBATCH -J LAST-gDNA
 #SBATCH -o /hpcfs/users/%u/log/LAST-gDNA-slurm-%j.out
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=10:00:00
@@ -14,8 +14,6 @@
 #SBATCH --mail-user=${USER}@adelaide.edu.au
 
 # Modules needed
-module purge
-module use /apps/skl/modules/all
 modList=("HTSlib/1.17-GCC-11.2.0" "SAMtools/1.17-GCC-11.2.0")
 
 # Hard coded paths and variables

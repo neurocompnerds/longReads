@@ -2,7 +2,7 @@
 
 #SBATCH -J mm2ont-cDNA
 #SBATCH -o /hpcfs/users/%u/log/mm2ont-DNA-slurm-%j.out
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=5:00:00
@@ -14,8 +14,6 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # Modules needed
-module purge
-module use /apps/skl/modules/all
 modList=("SAMtools/1.17-GCC-11.2.0" "HTSlib/1.17-GCC-11.2.0")
 
 # Hard coded paths and variables
