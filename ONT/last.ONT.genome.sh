@@ -1,39 +1,39 @@
 #!/bin/bash
 
-#SBATCH -J mm2ont-cDNA
-#SBATCH -o /hpcfs/users/%u/log/mm2ont-DNA-slurm-%j.out
+#SBATCH -J LAST-gDNA
+#SBATCH -o /hpcfs/users/%u/log/LAST-gDNA-slurm-%j.out
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 8
-#SBATCH --time=5:00:00
-#SBATCH --mem=32GB
+#SBATCH --time=48:00:00
+#SBATCH --mem=48GB
 
 # Notification configuration 
 #SBATCH --mail-type=END                                         
 #SBATCH --mail-type=FAIL                                        
-#SBATCH --mail-user=%u@adelaide.edu.au
+#SBATCH --mail-user=${USER}@adelaide.edu.au
 
 # Modules needed
-modList=("SAMtools/1.17-GCC-11.2.0" "HTSlib/1.17-GCC-11.2.0")
+modList=("HTSlib/1.17-GCC-11.2.0" "SAMtools/1.17-GCC-11.2.0")
 
 # Hard coded paths and variables
-minimapProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/minimap2-2.17_x64-linux/minimap2"
 userDir="/hpcfs/users/${USER}"
+lastProgDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/last_latest/bin/"
 cores=8 # Set the same as above for -n
 
 # Genome list (alter case statement below to add new options)
 set_genome_build() {
 case "${buildID}" in
-    GRCh38 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+    GRCh38 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
                 ;;
-    hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/hs37d5.fa.gz"
+    hs37d5 )    genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/hs37d5/hs37d5.fa.gz"
                 ;;
     GRCm38 | mm10 ) buildID="GRCm38"   
                     genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GRCm38_68.fa"
                 ;;
     T2T_CHM13v2 )   genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/T2T_CHM13v2.0.ucsc.ebv.fa.gz"
                 ;;
-    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+    * )         genomeBuild="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/LAST/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
                 echo "## WARN: Genome build ${buildID} not recognized, the default genome GRCh38 will be used."
                 buildID="GRCh38"
                 ;;
@@ -43,31 +43,28 @@ esac
 usage()
 {
 echo "# Script for mapping Oxford Nanopore reads to the human genome.
-# This script bypasses the mm2.ONT.DNA.wdl workflow and just submits the job directly.  The script sets up all of the required inputs using the information 
-# submitted via the flags below or default options provided.
-# REQUIREMENTS: As a minimum you need the fastq_pass or pass folder and the final_summary_xxx.txt file from your nanopore run.
 #
-# Usage: sbatch $0 -s /path/to/sequences [-o /path/to/output -g build_ID -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
-# Usage (with barcodes): sbatch --array 0-(n-1 barcodes) $0 -s /path/to/sequences -b [-o /path/to/output -g build_ID -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
+# REQUIREMENTS: As a minimum you need the fastq_pass folder and the final_summary_xxx.txt file from your nanopore run.
+#
+# Usage sbatch $0 -s /path/to/sequences [-o /path/to/output -g build_ID -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
+# Usage (with barcodes) sbatch --array 0-(n-1 barcodes) $0 -s /path/to/sequences -b [-o /path/to/output -g build_ID -S SAMPLE -L LIBRARY -I ID] | [ - h | --help ]
 #
 # Options
 # -s	REQUIRED. Path to the folder containing the fastq_pass or pass folder.  Your final_summary_xxx.txt must be in this folder.
 # -b    DEPENDS.  If you used barcodes set the -b flag.  If you want meaningful sample ID add a file called barcodes.txt to the sequence folder with the 
 #                 tab delimited barcode and ID on each line.
-# -S	OPTIONAL (with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
-#                from the final_summary_xxx.txt file.
+# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5, T2T_CHM13v2 or GRCm38. Default is GRCh38 which is the GCA_000001405.15_GRCh38_no_alt_analysis_set
+# -S	OPTIONAL.(with caveats). Sample name which will go into the BAM header. If not specified, then it will be fetched 
+#                 from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
-# -g    OPTIONAL. Genome build to use, select from either GRCh38, hs37d5, T2T_CHM13v2 or GRCm38. Default is GCA_000001405.15_GRCh38_no_alt_analysis_set
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
-#                 Default \"SQK-LSK110_\$protocol_group_id\"
+#                 Default \"SQK-LSK114_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
 # -h or --help	  Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
-# Original: Written by Mark Corbett, 28/04/2020
+# Original: Written by Mark Corbett, 01/09/2020
 # Modified: (Date; Name; Description)
-# 10/08/2020; Mark Corbett; Update to barcodes as per cDNA script (see speleonut::RNAseq repo)
-# 15/09/2020; Mark Corbett; Update Phoenix paths
-# 22/12/2021; Mark Corbett; Add in an option to select a genome build
+# 03/02/2022; Mark; Update module loading. Add genome build selection.
 # 11/10/2022; Mark Corbett; Add buildID to .bam file name. Add T2T_CHM13v2 to genome list
 #
 "
@@ -76,36 +73,35 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 ## Set Variables ##
 while [ "$1" != "" ]; do
 	case $1 in
-        -s )            shift
-                        seqPath=$1
-                        ;;
-        -b )            shift
-                        barcodes=true
-                        ;;
-        -S )            shift
-                        sampleName=$1
-                        ;;
-        -o )            shift
-                        workDir=$1
-                        ;;
+		-s )			shift
+					seqPath=$1
+					;;
+		-b )			shift
+					barcodes=true
+					;;
+		-S )			shift
+					sampleName=$1
+					;;
         -g )            shift
                         buildID=$1
                         ;;
-        -L )            shift
-                        LB=$1
-                        ;;
-		-I )            shift
-                        ID=$1
-                        ;;
-        -h | --help )   usage
-                        exit 0
-                        ;;
-        * )             usage
-                        exit 1
-    esac
-    shift
+		-o )			shift
+					workDir=$1
+					;;
+		-L )			shift
+					LB=$1
+					;;
+		-I )			shift
+					ID=$1
+					;;
+		-h | --help )		usage
+					exit 0
+					;;
+		* )			usage
+					exit 1
+	esac
+	shift
 done
-
 if [ -z "$seqPath" ]; then # If path to sequences not specified then do not proceed
 	usage
 	echo "## ERROR: You need to specify the path to the folder containing your fastq_pass folder. Don't include fastq_path in this name."
@@ -163,7 +159,7 @@ if [ ! -d "$workDir" ]; then
     mkdir -p $workDir
 fi
 
-if [ -z "$LB" ]; then # If library not specified try to make a specfic one or use "SQK-LSK110" as default
+if [ -z "$LB" ]; then # If library not specified try to make a specfic one or use "SQK-LSK114" as default
     if [ -f "$finalSummaryFile" ]; then
         protocol_group_id=$(grep protocol_group_id $finalSummaryFile | cut -f2 -d"=") 
         LB="SQK-LSK114-$protocol_group_id"
@@ -211,9 +207,6 @@ done
 
 ## Run the script ##
 cd $workDir
-${minimapProg} -ax map-ont \
--R "@RG\\tID:${ID}\\tLB:${LB}\\tPL:ONT\\tSM:${sampleName[$SLURM_ARRAY_TASK_ID]}" \
--t ${cores} ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz |\
-samtools view -bT ${genomeBuild} - |\
-samtools sort -l 5 -m 4G -@${cores} -T${sampleName[$SLURM_ARRAY_TASK_ID]} -o ${workDir}/${sampleName[$SLURM_ARRAY_TASK_ID]}.sort.${buildID}.bam -
-samtools index ${workDir}/${sampleName[$SLURM_ARRAY_TASK_ID]}.sort.${buildID}.bam
+${lastProgDir}/last-train -P${cores} -Q0 ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz > $workDir/${sampleName[$SLURM_ARRAY_TASK_ID]}.${buildID}.par
+${lastProgDir}/lastal -P${cores} -p $workDir/${sampleName[$SLURM_ARRAY_TASK_ID]}.${buildID}.par ${genomeBuild} $seqPath/${sampleName[$SLURM_ARRAY_TASK_ID]}.fastq.gz | \
+${lastProgDir}/last-split -fMAF | gzip > $workDir/${sampleName[$SLURM_ARRAY_TASK_ID]}.${buildID}.maf.gz

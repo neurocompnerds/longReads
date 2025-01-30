@@ -2,7 +2,7 @@
 
 #SBATCH -J LAST-gDNA
 #SBATCH -o /hpcfs/users/%u/log/LAST-gDNA-slurm-%j.out
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=10:00:00
@@ -14,8 +14,6 @@
 #SBATCH --mail-user=${USER}@adelaide.edu.au
 
 # Modules needed
-module purge
-module use /apps/skl/modules/all
 modList=("HTSlib/1.17-GCC-11.2.0" "SAMtools/1.17-GCC-11.2.0")
 
 # Hard coded paths and variables
@@ -60,7 +58,7 @@ echo "# Script for mapping Oxford Nanopore reads to the human genome.
 #                 from the final_summary_xxx.txt file.
 # -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory $userDir/ONT/DNA/\$sampleName is used)
 # -L	OPTIONAL. Identifier for the sequence library (to go into the @RG line, eg. MySeqProject20200202-PalindromicDatesRule). 
-#                 Default \"SQK-LSK110_\$protocol_group_id\"
+#                 Default \"SQK-LSK114_\$protocol_group_id\"
 # -I	OPTIONAL. Unique ID for the sequence (to go into the @RG line). If not specified the script will make one up.
 # -h or --help	  Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
@@ -161,12 +159,12 @@ if [ ! -d "$workDir" ]; then
     mkdir -p $workDir
 fi
 
-if [ -z "$LB" ]; then # If library not specified try to make a specfic one or use "SQK-LSK110" as default
+if [ -z "$LB" ]; then # If library not specified try to make a specfic one or use "SQK-LSK114" as default
     if [ -f "$finalSummaryFile" ]; then
         protocol_group_id=$(grep protocol_group_id $finalSummaryFile | cut -f2 -d"=") 
-        LB="SQK-LSK110-$protocol_group_id"
+        LB="SQK-LSK114-$protocol_group_id"
     else 
-        LB="SQK-LSK110"
+        LB="SQK-LSK114"
     fi
 fi
 echo "## INFO: Using $LB for library name"

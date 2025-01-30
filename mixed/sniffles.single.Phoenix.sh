@@ -2,7 +2,7 @@
 
 #SBATCH -J sniffles
 #SBATCH -o /hpcfs/users/%u/log/sniffles-slurm-%j.out
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 4
 #SBATCH --time=00:30:00
@@ -19,8 +19,6 @@
 userDir="/hpcfs/users/${USER}"
 neuroDir="/hpcfs/groups/phoenix-hpc-neurogenetics"
 refDir="$neuroDir/RefSeq"
-module purge
-module use /apps/skl/modules/all
 modList=("SAMtools/1.17-GCC-11.2.0" "Anaconda3/2020.07")
 
 usage()

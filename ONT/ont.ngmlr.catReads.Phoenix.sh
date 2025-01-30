@@ -2,7 +2,7 @@
 
 #SBATCH -J ngmlr
 #SBATCH -o /hpcfs/users/%u/log/ngmlr.ont.slurm-%j.out
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=24:00:00
@@ -20,8 +20,6 @@ exeDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/ngmlr/ngmlr-0.2.7/"
 userDir="/hpcfs/users/${USER}"
 sambambaProg="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/sambamba-0.8.2-linux-amd64-static"
 # Modules needed
-module purge
-module use /apps/skl/modules/all
 modList=("SAMtools/1.17-GCC-11.2.0" "HTSlib/1.17-GCC-11.2.0")
 
 usage()
